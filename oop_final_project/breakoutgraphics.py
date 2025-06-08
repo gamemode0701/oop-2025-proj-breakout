@@ -12,27 +12,26 @@ from campy.graphics.gwindow import GWindow
 from campy.graphics.gobjects import GOval, GRect, GLabel
 from campy.gui.events.mouse import onmouseclicked, onmousemoved
 import random
+import sys
 
-BRICK_SPACING = 5      # Space between bricks (in pixels). This space is used for horizontal and vertical spacing
-BRICK_WIDTH = 40       # Width of a brick (in pixels)
-BRICK_HEIGHT = 15      # Height of a brick (in pixels)
-BRICK_ROWS = 10      # Number of rows of bricks
-BRICK_COLS = 10      # Number of columns of bricks
-BRICK_OFFSET = 50      # Vertical offset of the topmost brick from the window top (in pixels)
-BALL_RADIUS = 10       # Radius of the ball (in pixels)
-PADDLE_WIDTH = 75      # Width of the paddle (in pixels)
-PADDLE_HEIGHT = 15     # Height of the paddle (in pixels)
-PADDLE_OFFSET = 50     # Vertical offset of the paddle from the window bottom (in pixels)
-INITIAL_Y_SPEED = 5    # Initial vertical speed for the ball
-MAX_X_SPEED = 5        # Maximum initial horizontal speed for the ball
-OBSTACLE_WIDTH = 40    # Width of a small obstacle
-OBSTACLE_HEIGHT = 15   # Height of a small obstacle
-
+BRICK_SPACING = 5
+BRICK_WIDTH = 40
+BRICK_HEIGHT = 15
+BRICK_ROWS = 10
+BRICK_COLS = 10
+BRICK_OFFSET = 50
+BALL_RADIUS = 10
+PADDLE_WIDTH = 75
+PADDLE_HEIGHT = 15
+PADDLE_OFFSET = 50
+INITIAL_Y_SPEED = 5
+MAX_X_SPEED = 5
+OBSTACLE_WIDTH = 40
+OBSTACLE_HEIGHT = 15
+                    
 
 class BreakoutGraphics:
-
     def __init__(self, layout_type='default', **kwargs):
-        # 解構 kwargs 傳入設定值
         self.brick_rows = kwargs.get('brick_rows', BRICK_ROWS)
         self.brick_cols = kwargs.get('brick_cols', BRICK_COLS)
         self.brick_width = kwargs.get('brick_width', BRICK_WIDTH)
@@ -62,7 +61,6 @@ class BreakoutGraphics:
         onmousemoved(self.track)
         onmouseclicked(self.start)
 
-        # 使用不同布局
         self.bricks = []
         self.total_bricks = 0
         self.board = GLabel(' ')
@@ -134,7 +132,6 @@ class BreakoutGraphics:
                 self.total_bricks += 1
 
     def track(self, event):
-        # this function follow onmousemove(), which will track mouse to move a paddle
         if self.paddle.width//2 < event.x < self.window.width-self.paddle.width//2:
             self.paddle.x = event.x - PADDLE_WIDTH//2
         elif event.x < self.paddle.width//2:
@@ -143,7 +140,6 @@ class BreakoutGraphics:
             self.paddle.x = self.window.width-self.paddle.width
 
     def start(self, _):
-        # this function follows onmouseclick(), which will made dx and dy have a random value if they equal to 0
         if self.__dx == 0:
             self.__dx = random.randint(1, MAX_X_SPEED)
             if random.random() < 0.5:
@@ -151,7 +147,6 @@ class BreakoutGraphics:
             self.__dy = INITIAL_Y_SPEED
 
     def reset_ball(self):
-        # this function reset the ball to the start position
         self.window.remove(self.ball)
         self.__dx = 0
         self.__dy = 0
@@ -159,9 +154,13 @@ class BreakoutGraphics:
                         y=(self.window.height - self.ball.height) / 2)
 
     def get_dx(self):
-        # return dx that user can use
         return self.__dx
 
     def get_dy(self):
-        # return dy that user can use
         return self.__dy
+
+if __name__ == '__main__':
+    welcome = WelcomeScreen()
+    while welcome.level_selected is None:
+        pass
+    graphics = BreakoutGraphics(layout_type=welcome.level_selected)

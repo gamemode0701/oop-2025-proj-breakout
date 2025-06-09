@@ -7,6 +7,7 @@ lives to break all the bricks. As long as all the bricks are broken, or all the 
 from campy.gui.events.timer import pause
 from breakoutgraphics import BreakoutGraphics
 from welcome_screen import WelcomeScreen  # Import the welcome screen
+from end_animation import lost_animation
 
 FRAME_RATE = 10         # 100 frames per second
 NUM_LIVES = 3           # Number of attempts
@@ -80,13 +81,17 @@ def main():
     finish_board = graphics.finish
     if counter > 0 and total <= 0:
         finish_board.text = 'Congratulations!!'
+        graphics.window.add(finish_board, x=(graphics.window.width - finish_board.width) / 2,
+                        y=(graphics.window.height + finish_board.height) / 2)
+        pause(2000)
+
     else:
         graphics.window.remove(graphics.ball)
         finish_board.text = 'Game Over...'
-
-    graphics.window.add(finish_board, x=(graphics.window.width - finish_board.width) / 2,
+        graphics.window.add(finish_board, x=(graphics.window.width - finish_board.width) / 2,
                         y=(graphics.window.height + finish_board.height) / 2)
-
+        pause(2000) #let player see the game over message
+        lost_animation(graphics.window)
 
 def brick_score(total):
     if total < 50:

@@ -12,7 +12,6 @@ from campy.graphics.gwindow import GWindow
 from campy.graphics.gobjects import GOval, GRect, GLabel
 from campy.gui.events.mouse import onmouseclicked, onmousemoved
 import random
-import sys
 
 BRICK_SPACING = 5
 BRICK_WIDTH = 40
@@ -42,6 +41,10 @@ class BreakoutGraphics:
         paddle_height = kwargs.get('paddle_height', PADDLE_HEIGHT)
         paddle_offset = kwargs.get('paddle_offset', PADDLE_OFFSET)
         ball_radius = kwargs.get('ball_radius', BALL_RADIUS)
+        self.extra_balls = []
+        self.slow_timer = 0
+        self.bomb_mode_timer = 0
+
 
         window_width = self.brick_cols * (self.brick_width + self.brick_spacing) - self.brick_spacing
         window_height = self.brick_offset + 3 * (self.brick_rows * (self.brick_height + self.brick_spacing) - self.brick_spacing)

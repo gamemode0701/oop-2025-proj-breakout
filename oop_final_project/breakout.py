@@ -8,6 +8,8 @@ from campy.gui.events.timer import pause
 from breakoutgraphics import BreakoutGraphics
 from welcome_screen import WelcomeScreen  # Import the welcome screen
 from end_animation import lost_animation
+from ball_powerups import PowerUpManager
+from powerup_selector import choose_from_two_powerups
 
 FRAME_RATE = 10         # 100 frames per second
 NUM_LIVES = 3           # Number of attempts
@@ -25,6 +27,11 @@ def main():
 
     # Start the game with selected layout
     graphics = BreakoutGraphics(layout_type=welcome.level_selected)
+    powerup_manager = PowerUpManager(graphics.window, graphics)
+    graphics.extra_balls = []           # add support attributes
+    graphics.slow_timer = 0
+    graphics.bomb_mode_timer = 0
+    brick_destroyed = 0
 
     graphics.board.text = f'Lives: {counter}  Score: {score}'
     graphics.window.add(graphics.board, 0, graphics.window.height - graphics.board.height)
@@ -34,6 +41,16 @@ def main():
     total = graphics.total_bricks
 
     while counter > 0 and total > 0:
+        # Update power-ups
+        powerup_manager.update()
+
+        # Apply slow effect if active
+        if graphics.slow_timer > 0:
+            graphics.slow_timer -= 1
+            pause(FRAME_RATE + 5)  # slower
+        else:
+            pause(FRAME_RATE)
+
         if vx == vy == 0:
             vx = graphics.get_dx()
             vy = graphics.get_dy()
@@ -65,18 +82,27 @@ def main():
 
         if maybe_brick1 is not None and maybe_brick1 is not graphics.paddle and maybe_brick1 is not graphics.board:
             graphics.window.remove(maybe_brick1)
+
             vy = -vy
             total -= 1
             score += brick_score(total)
+            brick_destroyed += 1
+            if brick_destroyed % 10 ==0:
+                chosen = choose_from_two_powerups(graphics.window)
+                powerup_manager.apply_powerup(chosen)
             graphics.board.text = f'Lives: {counter}  Score: {score}'
         elif maybe_brick2 is not None and maybe_brick2 is not graphics.paddle and maybe_brick2 is not graphics.board:
             graphics.window.remove(maybe_brick2)
             vy = -vy
             total -= 1
             score += brick_score(total)
+            if brick_destroyed % 10 ==0:
+                chosen = choose_from_two_powerups(graphics.window)
+                powerup_manager.apply_powerup(chosen)
             graphics.board.text = f'Lives: {counter}  Score: {score}'
         elif maybe_paddle1 is graphics.paddle or maybe_paddle2 is graphics.paddle:
             vy = -vy
+        
 
     finish_board = graphics.finish
     if counter > 0 and total <= 0:

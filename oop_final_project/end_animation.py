@@ -82,10 +82,43 @@ def win_animation(window):
         window.add(dot, x=x, y=y)
         pause(10)
 
+def game_over_menu(window):
+    from campy.gui.events.mouse import onmouseclicked
 
-if __name__ == '__main__':
-    from campy.graphics.gwindow import GWindow
-    win = GWindow(500, 300)
-    win_animation(win)
+    options = ['retry', 'back to menu', 'exit']
+    choice = {'value': None}
+    labels = []
+
+    spacing = window.width // 4
+    for i, text in enumerate(options):
+        label = GLabel(text)
+        label.font = '-20'
+        label.color = 'crimson'
+        x = (window.width - label.width) / 2
+        y = window.height / 2 + i * spacing
+        window.add(label, x, y)
+        label.option = text
+        labels.append(label)
+
+    def click_handler(event):
+        for label in labels:
+            if label.x <= event.x <= label.x + label.width and label.y - 20 <= event.y <= label.y:
+                choice['value'] = label.option
+
+    onmouseclicked(click_handler)
+
+    while choice['value'] is None:
+        pause(100)
+
+    for label in labels:
+        window.remove(label)
+
+    # 對應回傳英文標籤
+    if choice['value'] == 'retry':
+        return 'retry'
+    elif choice['value'] == 'back to menu':
+        return 'menu'
+    else:
+        return 'exit'
     
     

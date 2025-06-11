@@ -161,6 +161,14 @@ class BreakoutGraphics:
 
     def get_dy(self):
         return self.__dy
+    
+    def reset_game(self, layout_type):
+    # 移除所有物件
+        for obj in self.window:
+            self.window.remove(obj)
+        # 重建 paddle, ball, bricks, board 等
+        self.__init__(layout_type=layout_type)
+
 
 if __name__ == '__main__':
     welcome = WelcomeScreen()

@@ -11,17 +11,20 @@ class WelcomeScreen:
         self.buttons = []
 
         self.create_button('Default Layout', 50, 'default')
-        self.create_button('Cross Layout', 120, 'cross')
-        self.create_button('Zigzag Layout', 190, 'zigzag')
-        self.create_button('Exit Game', 260, 'exit')
+        self.create_button('Cross Layout', 100, 'cross')
+        self.create_button('Zigzag Layout', 150, 'zigzag')
+        self.create_button('Exit Game', 200, 'exit')
 
         onmouseclicked(self.handle_click)
+
+    def show(self):
+        self.level_selected = None  # Reset selection each time shown
 
     def create_button(self, text, y_pos, layout_type):
         rect = GRect(300, 40)
         rect.filled = True
         rect.fill_color = 'yellow'
-        rect.layout_type = layout_type  # MUST set before adding to window
+        rect.layout_type = layout_type
         self.window.add(rect, x=50, y=y_pos)
         self.buttons.append(rect)
 
@@ -34,7 +37,6 @@ class WelcomeScreen:
             if btn.x <= event.x <= btn.x + btn.width and btn.y <= event.y <= btn.y + btn.height:
                 layout = btn.layout_type
                 if layout == 'exit':
-                    exit()
+                    sys.exit()
                 else:
                     self.level_selected = layout
-                    self.window._tkwin.withdraw()

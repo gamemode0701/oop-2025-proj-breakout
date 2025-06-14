@@ -1,26 +1,47 @@
 import random
 from campy.graphics.gobjects import GRect, GLabel, GOval
 from campy.gui.events.timer import pause
+import paddle_manager  # Assuming paddle_manager is a module that manages paddle behavior
 
 class PowerUp:
     def __init__(self, kind, x, y):
         self.kind = kind
-        self.label = GLabel(kind)
-        self.label.font = '-14'
-        self.label.color = 'blue'
+        self.rect = GRect(40, 20, x=x, y=y)  # Rectangle size and position
+        self.rect.filled = True
+        self.rect.fill_color = self.get_color_by_kind(kind)
+        self.rect.color = 'black'
         self.x = x
         self.y = y
         self.active = True
+        self.rect.powerup_ref = self  # Reference to this PowerUp instance
+
+        # Optional: Add a label on the rectangle
+        self.label = GLabel(kind[:2].upper(), x + 5, y + 15)
+        self.label.font = '-12'
+        self.label.color = 'white'
+        self.label.powerup_ref = self
+
+    def get_color_by_kind(self, kind):
+        colors = {
+            'add_ball': 'green',
+            'multi_ball': 'orange',
+            'slow': 'blue',
+            'bomb': 'red',
+            'wide_paddle': 'purple'
+        }
+        return colors.get(kind, 'gray')
 
     def fall(self, window, speed=3):
         if self.active:
             self.y += speed
-            self.label.y = self.y
-            self.label.x = self.x
+            self.rect.y = self.y
+            self.label.y = self.y + 15
+            window.add(self.rect)
             window.add(self.label)
 
     def deactivate(self, window):
         self.active = False
+        window.remove(self.rect)
         window.remove(self.label)
 
 
@@ -80,12 +101,11 @@ class PowerUpManager:
             self.graphics.extra_balls.append({'obj': new_ball, 'dx': self.graphics.get_dx() + angle, 'dy': self.graphics.get_dy()})
 
     def apply_slow(self):
-        self.graphics.slow_timer = 300  # lasts 300 frames
+        self.graphics.slow_timer = 300  # e.g., 300 frames
+
+    def apply_wide_paddle(self):
+        self.graphics.paddle_manager.enlarge(1.5)
+        self.graphics.wide_paddle_timer = 300  # e.g., 300 frames
 
     def apply_bomb(self):
         self.graphics.bomb_mode_timer = 200
-
-    def apply_wide_paddle(self):
-        self.graphics.paddle.width *= 1.5
-        pause(5000)
-        self.graphics.paddle.width /= 1.5

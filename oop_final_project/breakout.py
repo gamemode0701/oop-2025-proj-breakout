@@ -7,9 +7,11 @@ lives to break all the bricks. As long as all the bricks are broken or all the l
 from campy.gui.events.timer import pause
 from breakoutgraphics import BreakoutGraphics
 from welcome_screen import WelcomeScreen  # 匯入歡迎畫面
-from end_animation import lost_animation, game_over_menu
+from end_animation import lost_animation
 from ball_powerups import PowerUpManager
 from powerup_selector import choose_from_two_powerups
+from paddle_manager import PaddleManager
+from menus import game_over_menu # 遊戲設定
 from ball_motion import ball_motion
 
 FRAME_RATE = 10         # 每幀間隔（數值越小速度越快）
@@ -24,9 +26,12 @@ def main():
 
         # 根據玩家選擇的關卡建立遊戲畫面
         graphics = BreakoutGraphics(layout_type=welcome.level_selected)
+        paddle_manager = PaddleManager(graphics.paddle)
+        graphics.paddle_manager = paddle_manager 
         powerup_manager = PowerUpManager(graphics.window, graphics)  # 建立道具管理器
         graphics.extra_balls = []           # 額外球的屬性
         graphics.slow_timer = 0             # 慢速道具計時器
+        graphics.wide_paddle_timer = 0      # 寬板道具計時器
         graphics.bomb_mode_timer = 0        # 炸彈模式計時器
         brick_destroyed = 0                 # 已消除磚塊數
 
@@ -34,6 +39,8 @@ def main():
         score = 0                           # 分數
         graphics.board.text = f'Lives: {counter}  Score: {score}'  # 顯示生命與分數
         graphics.window.add(graphics.board, 0, graphics.window.height - graphics.board.height)  # 加到底部
+        powerup_kind = ''  # 初始道具類型
+
 
         vx = 0      # 球的水平速度
         vy = 0      # 球的垂直速度
@@ -42,6 +49,24 @@ def main():
         # 遊戲主迴圈：只要還有生命且還有磚塊
         while counter > 0 and total > 0:
             powerup_manager.update()  # 更新道具狀態
+            # 檢查是否有道具掉落到板子上
+            for maybe_powerup in [
+                graphics.window.get_object_at(graphics.paddle.x, graphics.ball.y),
+                graphics.window.get_object_at(graphics.paddle.x + graphics.paddle.width, graphics.ball.y),
+                graphics.window.get_object_at(graphics.paddle.x + graphics.paddle.width / 2, graphics.ball.y)
+            ]:
+                if (
+                    maybe_powerup is not None
+                    and maybe_powerup is not graphics.ball
+                    and maybe_powerup is not graphics.board
+                    and hasattr(maybe_powerup, 'powerup_ref')
+                ):
+                    powerup_obj = maybe_powerup.powerup_ref
+                    powerup_kind = powerup_obj.kind
+                    powerup_manager.apply_powerup(powerup_kind)
+                    powerup_obj.deactivate(graphics.window)
+                    if powerup_obj in powerup_manager.powerups:
+                        powerup_manager.powerups.remove(powerup_obj)
 
             # 慢速道具效果
             if graphics.slow_timer > 0:
@@ -50,6 +75,37 @@ def main():
             else:
                 pause(FRAME_RATE)
 
+            # 寬板道具效果
+            if graphics.wide_paddle_timer > 0:
+                graphics.wide_paddle_timer -= 1
+                # Effect is already applied, just wait for timer to end
+                if graphics.wide_paddle_timer == 0:
+                    graphics.paddle_manager.restore()
+
+            # 炸彈道具效果
+            if graphics.bomb_mode_timer > 0:
+                graphics.bomb_mode_timer -= 1
+                # Add bomb effect logic here if needed
+
+            # 若球尚未發射，取得初始速度
+            if vx == vy == 0:
+                vx = graphics.get_dx()
+                vy = graphics.get_dy()
+            graphics.ball.move(vx, vy)  # 移動球
+
+            # 球碰到左右牆反彈
+            if graphics.ball.x >= graphics.window.width or graphics.ball.x <= 0:
+                vx = -vx
+            # 球碰到上方牆反彈
+            if graphics.ball.y <= 0:
+                vy = -vy
+            # 球掉到下方，重設球並扣一條命
+            if graphics.ball.y >= graphics.window.height:
+                graphics.reset_ball()
+                vx = 0
+                vy = 0
+                counter -= 1
+                graphics.board.text = f'Lives: {counter}  Score: {score}'
             # --- 以下原本的球移動與反彈邏輯註解掉 ---
             # # 若球尚未發射，取得初始速度
             # if vx == vy == 0:
@@ -73,6 +129,7 @@ def main():
 
             # --- 新增：只要有球在場上就呼叫 ball_motion 控制所有球 ---
             ball_motion(graphics)
+
 
             # 根據剩餘磚塊數調整速度
             if total >= 50:

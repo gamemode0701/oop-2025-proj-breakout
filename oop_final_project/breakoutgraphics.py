@@ -188,11 +188,3 @@ class BreakoutGraphics:
             self.window.remove(obj)
         # 重新初始化
         self.__init__(layout_type=layout_type)
-
-# 測試用主程式（可移除）
-if __name__ == '__main__':
-    from welcome_screen import WelcomeScreen
-    welcome = WelcomeScreen()
-    while welcome.level_selected is None:
-        pass
-    graphics = BreakoutGraphics(layout_type=welcome.level_selected)

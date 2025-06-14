@@ -10,6 +10,7 @@ from welcome_screen import WelcomeScreen  # 匯入歡迎畫面
 from end_animation import lost_animation, game_over_menu
 from ball_powerups import PowerUpManager
 from powerup_selector import choose_from_two_powerups
+from paddle_manager import PaddleManager
 
 FRAME_RATE = 10         # 每幀間隔（數值越小速度越快）
 NUM_LIVES = 3           # 玩家生命數
@@ -23,9 +24,12 @@ def main():
 
         # 根據玩家選擇的關卡建立遊戲畫面
         graphics = BreakoutGraphics(layout_type=welcome.level_selected)
+        paddle_manager = PaddleManager(graphics.paddle)
+        graphics.paddle_manager = paddle_manager 
         powerup_manager = PowerUpManager(graphics.window, graphics)  # 建立道具管理器
         graphics.extra_balls = []           # 額外球的屬性
         graphics.slow_timer = 0             # 慢速道具計時器
+        graphics.wide_paddle_timer = 0      # 寬板道具計時器
         graphics.bomb_mode_timer = 0        # 炸彈模式計時器
         brick_destroyed = 0                 # 已消除磚塊數
 
@@ -33,6 +37,8 @@ def main():
         score = 0                           # 分數
         graphics.board.text = f'Lives: {counter}  Score: {score}'  # 顯示生命與分數
         graphics.window.add(graphics.board, 0, graphics.window.height - graphics.board.height)  # 加到底部
+        powerup_kind = ''  # 初始道具類型
+
 
         vx = 0      # 球的水平速度
         vy = 0      # 球的垂直速度
@@ -41,6 +47,24 @@ def main():
         # 遊戲主迴圈：只要還有生命且還有磚塊
         while counter > 0 and total > 0:
             powerup_manager.update()  # 更新道具狀態
+            # 檢查是否有道具掉落到板子上
+            for maybe_powerup in [
+                graphics.window.get_object_at(graphics.paddle.x, graphics.ball.y),
+                graphics.window.get_object_at(graphics.paddle.x + graphics.paddle.width, graphics.ball.y),
+                graphics.window.get_object_at(graphics.paddle.x + graphics.paddle.width / 2, graphics.ball.y)
+            ]:
+                if (
+                    maybe_powerup is not None
+                    and maybe_powerup is not graphics.ball
+                    and maybe_powerup is not graphics.board
+                    and hasattr(maybe_powerup, 'powerup_ref')
+                ):
+                    powerup_obj = maybe_powerup.powerup_ref
+                    powerup_kind = powerup_obj.kind
+                    powerup_manager.apply_powerup(powerup_kind)
+                    powerup_obj.deactivate(graphics.window)
+                    if powerup_obj in powerup_manager.powerups:
+                        powerup_manager.powerups.remove(powerup_obj)
 
             # 慢速道具效果
             if graphics.slow_timer > 0:
@@ -48,6 +72,18 @@ def main():
                 pause(FRAME_RATE + 5)  # 慢速時延長暫停時間
             else:
                 pause(FRAME_RATE)
+
+            # 寬板道具效果
+            if graphics.wide_paddle_timer > 0:
+                graphics.wide_paddle_timer -= 1
+                # Effect is already applied, just wait for timer to end
+                if graphics.wide_paddle_timer == 0:
+                    graphics.paddle_manager.restore()
+
+            # 炸彈道具效果
+            if graphics.bomb_mode_timer > 0:
+                graphics.bomb_mode_timer -= 1
+                # Add bomb effect logic here if needed
 
             # 若球尚未發射，取得初始速度
             if vx == vy == 0:

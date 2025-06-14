@@ -53,28 +53,39 @@ class PowerUpManager:
 
     def apply_powerup(self, kind):
         if kind == 'add_ball':
+            self.apply_add_ball()
+        elif kind == 'multi_ball':
+            self.apply_multi_ball()
+        elif kind == 'slow':
+            self.apply_slow()
+        elif kind == 'bomb':
+            self.apply_bomb()
+        elif kind == 'wide_paddle':
+            self.apply_wide_paddle()
+
+    def apply_add_ball(self):
+        new_ball = GOval(self.graphics.ball.width, self.graphics.ball.height)
+        new_ball.filled = True
+        new_ball.fill_color = 'gray'
+        self.window.add(new_ball, x=self.graphics.ball.x, y=self.graphics.ball.y)
+        # Give it same dx/dy as original
+        self.graphics.extra_balls.append({'obj': new_ball, 'dx': self.graphics.get_dx(), 'dy': self.graphics.get_dy()})
+
+    def apply_multi_ball(self):
+        for angle in [-3, 0, 3]:
             new_ball = GOval(self.graphics.ball.width, self.graphics.ball.height)
             new_ball.filled = True
             new_ball.fill_color = 'gray'
             self.window.add(new_ball, x=self.graphics.ball.x, y=self.graphics.ball.y)
-            # Give it same dx/dy as original
-            self.graphics.extra_balls.append({'obj': new_ball, 'dx': self.graphics.get_dx(), 'dy': self.graphics.get_dy()})
+            self.graphics.extra_balls.append({'obj': new_ball, 'dx': self.graphics.get_dx() + angle, 'dy': self.graphics.get_dy()})
 
-        elif kind == 'multi_ball':
-            for angle in [-3, 0, 3]:
-                new_ball = GOval(self.graphics.ball.width, self.graphics.ball.height)
-                new_ball.filled = True
-                new_ball.fill_color = 'gray'
-                self.window.add(new_ball, x=self.graphics.ball.x, y=self.graphics.ball.y)
-                self.graphics.extra_balls.append({'obj': new_ball, 'dx': self.graphics.get_dx() + angle, 'dy': self.graphics.get_dy()})
+    def apply_slow(self):
+        self.graphics.slow_timer = 300  # lasts 300 frames
 
-        elif kind == 'slow':
-            self.graphics.slow_timer = 300  # lasts 300 frames
+    def apply_bomb(self):
+        self.graphics.bomb_mode_timer = 200
 
-        elif kind == 'bomb':
-            self.graphics.bomb_mode_timer = 200
-
-        elif kind == 'wide_paddle':
-            self.graphics.paddle.width *= 1.5
-            pause(5000)
-            self.graphics.paddle.width /= 1.5
+    def apply_wide_paddle(self):
+        self.graphics.paddle.width *= 1.5
+        pause(5000)
+        self.graphics.paddle.width /= 1.5

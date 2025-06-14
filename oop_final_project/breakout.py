@@ -12,6 +12,7 @@ from ball_powerups import PowerUpManager
 from powerup_selector import choose_from_two_powerups
 from paddle_manager import PaddleManager
 from menus import game_over_menu # 遊戲設定
+from ball_motion import ball_motion
 
 FRAME_RATE = 10         # 每幀間隔（數值越小速度越快）
 NUM_LIVES = 3           # 玩家生命數
@@ -105,6 +106,30 @@ def main():
                 vy = 0
                 counter -= 1
                 graphics.board.text = f'Lives: {counter}  Score: {score}'
+            # --- 以下原本的球移動與反彈邏輯註解掉 ---
+            # # 若球尚未發射，取得初始速度
+            # if vx == vy == 0:
+            #     vx = graphics.get_dx()
+            #     vy = graphics.get_dy()
+            # graphics.ball.move(vx, vy)  # 移動球
+
+            # # 球碰到左右牆反彈
+            # if graphics.ball.x >= graphics.window.width or graphics.ball.x <= 0:
+            #     vx = -vx
+            # # 球碰到上方牆反彈
+            # if graphics.ball.y <= 0:
+            #     vy = -vy
+            # # 球掉到下方，重設球並扣一條命
+            # if graphics.ball.y >= graphics.window.height:
+            #     graphics.reset_ball()
+            #     vx = 0
+            #     vy = 0
+            #     counter -= 1
+            #     graphics.board.text = f'Lives: {counter}  Score: {score}'
+
+            # --- 新增：只要有球在場上就呼叫 ball_motion 控制所有球 ---
+            ball_motion(graphics)
+
 
             # 根據剩餘磚塊數調整速度
             if total >= 50:
@@ -113,43 +138,67 @@ def main():
                 pause(FRAME_RATE - 2)
             else:
                 pause(FRAME_RATE - 4)
-
             # 檢查球的四個角是否碰到物件
-            maybe_brick1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y)  # 左上角
-            maybe_brick2 = graphics.window.get_object_at(graphics.ball.x + graphics.ball.width, graphics.ball.y)  # 右上角
-            maybe_paddle1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y + graphics.ball.height)  # 左下角
-            maybe_paddle2 = graphics.window.get_object_at(graphics.ball.x + graphics.ball.width,
-                                                          graphics.ball.y + graphics.ball.height)  # 右下角
+            ball_radius = graphics.ball.width  # GOval的width=height=radius
 
-            # 球碰到磚塊1（左上角）
-            if maybe_brick1 is not None and maybe_brick1 is not graphics.paddle and maybe_brick1 is not graphics.board:
-                graphics.window.remove(maybe_brick1)  # 移除磚塊
-                vy = -vy  # 反彈
-                total -= 1  # 剩餘磚塊減一
-                score += brick_score(total)  # 加分
-                brick_destroyed += 1  # 已消除磚塊數加一
-                # 檢查是否產生道具
-                powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)
-                if brick_destroyed % 10 == 0:
-                    chosen = choose_from_two_powerups(graphics.window)  # 每10塊選擇一個道具
-                    powerup_manager.apply_powerup(chosen)
-                graphics.board.text = f'Lives: {counter}  Score: {score}'
-            # 球碰到磚塊2（右上角）
-            elif maybe_brick2 is not None and maybe_brick2 is not graphics.paddle and maybe_brick2 is not graphics.board:
-                graphics.window.remove(maybe_brick2)  # 移除磚塊
-                vy = -vy  # 反彈
-                total -= 1  # 剩餘磚塊減一
-                score += brick_score(total)  # 加分
-                brick_destroyed += 1  # 已消除磚塊數加一
-                powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)  # 檢查是否產生道具
-                if brick_destroyed % 10 == 0:
-                    chosen = choose_from_two_powerups(graphics.window)  # 每10塊選擇一個道具
-                    powerup_manager.apply_powerup(chosen)
-                graphics.board.text = f'Lives: {counter}  Score: {score}'
+            # 計算新的四個判斷點
+            left_x = graphics.ball.x
+            right_x = graphics.ball.x + graphics.ball.width
+            y_top = graphics.ball.y + (1/3) * ball_radius
+            y_bottom = graphics.ball.y + (2/3) * ball_radius
+
+            maybe_brick1 = graphics.window.get_object_at(left_x, y_top)      # 左上 1/3
+            maybe_brick2 = graphics.window.get_object_at(right_x, y_top)     # 右上 1/3
+            maybe_brick3 = graphics.window.get_object_at(left_x, y_bottom)   # 左下 2/3
+            maybe_brick4 = graphics.window.get_object_at(right_x, y_bottom)  # 右下 2/3
+            maybe_paddle1 = graphics.window.get_object_at(left_x, y_bottom)  # 左下 2/3
+            maybe_paddle2 = graphics.window.get_object_at(right_x, y_bottom) # 右下 2/3
+
+            # 計算碰到物件的角數量
+            hit_corners = sum(1 for corner in [maybe_brick1, maybe_brick2, maybe_brick3, maybe_brick4] if corner is not None and corner is not graphics.board)
+
+            # 檢查是否碰到板子的側邊
+            is_side_hit = False
+            if (maybe_paddle1 is graphics.paddle or maybe_paddle2 is graphics.paddle) and hit_corners == 1:
+                # 檢查球的中心點是否在板子的左右側邊
+                ball_center_x = graphics.ball.x + graphics.ball.width / 2
+                if (ball_center_x < graphics.paddle.x or ball_center_x > graphics.paddle.x + graphics.paddle.width):
+                    is_side_hit = True
+
+            # 檢查四個角是否碰到磚塊
+            for maybe_brick in [maybe_brick1, maybe_brick2, maybe_brick3, maybe_brick4]:
+                if maybe_brick is not None and maybe_brick is not graphics.paddle and maybe_brick is not graphics.board:
+                    graphics.window.remove(maybe_brick)  # 移除磚塊
+                    if hit_corners == 1:
+                        # 單角碰撞，反轉 dx 和 dy
+                        graphics._BreakoutGraphics__dx = -graphics.get_dx()
+                        graphics._BreakoutGraphics__dy = -graphics.get_dy()
+                    else:
+                        # 多角碰撞，只反轉 dy
+                        graphics._BreakoutGraphics__dy = -graphics.get_dy()
+                    total -= 1  # 剩餘磚塊減一
+                    score += brick_score(total)  # 加分
+                    brick_destroyed += 1  # 已消除磚塊數加一
+                    # 檢查是否產生道具
+                    powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)
+                    if brick_destroyed % 10 == 0:
+                        chosen = choose_from_two_powerups(graphics.window)  # 每10塊選擇一個道具
+                        powerup_manager.apply_powerup(chosen)
+                    graphics.board.text = f'Lives: {counter}  Score: {score}'
+                    break  # 一次只消一塊磚塊
+
             # 球碰到板子反彈
-            elif maybe_paddle1 is graphics.paddle or maybe_paddle2 is graphics.paddle:
-                vy = -vy  # 球碰到板子時反彈
-
+            if maybe_paddle1 is graphics.paddle or maybe_paddle2 is graphics.paddle:
+                if is_side_hit:
+                    # 側邊碰撞，反轉 dx
+                    graphics._BreakoutGraphics__dx = -graphics.get_dx()
+                elif hit_corners == 1:
+                    # 單角碰撞，反轉 dx 和 dy
+                    graphics._BreakoutGraphics__dx = -graphics.get_dx()
+                    graphics._BreakoutGraphics__dy = -graphics.get_dy()
+                else:
+                    # 頂部碰撞，只反轉 dy
+                    graphics._BreakoutGraphics__dy = -graphics.get_dy()
         # 遊戲結束，顯示結束訊息
         finish_board = graphics.finish
         if counter > 0 and total <= 0:

@@ -23,7 +23,7 @@ def main():
 
         # 根據玩家選擇的關卡建立遊戲畫面
         graphics = BreakoutGraphics(layout_type=welcome.level_selected)
-        powerup_manager = PowerUpManager(graphics.window, graphics)
+        powerup_manager = PowerUpManager(graphics.window, graphics)  # 建立道具管理器
         graphics.extra_balls = []           # 額外球的屬性
         graphics.slow_timer = 0             # 慢速道具計時器
         graphics.bomb_mode_timer = 0        # 炸彈模式計時器
@@ -45,7 +45,7 @@ def main():
             # 慢速道具效果
             if graphics.slow_timer > 0:
                 graphics.slow_timer -= 1
-                pause(FRAME_RATE + 5)
+                pause(FRAME_RATE + 5)  # 慢速時延長暫停時間
             else:
                 pause(FRAME_RATE)
 
@@ -78,51 +78,51 @@ def main():
                 pause(FRAME_RATE - 4)
 
             # 檢查球的四個角是否碰到物件
-            maybe_brick1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y)
-            maybe_brick2 = graphics.window.get_object_at(graphics.ball.x + graphics.ball.width, graphics.ball.y)
-            maybe_paddle1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y + graphics.ball.height)
+            maybe_brick1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y)  # 左上角
+            maybe_brick2 = graphics.window.get_object_at(graphics.ball.x + graphics.ball.width, graphics.ball.y)  # 右上角
+            maybe_paddle1 = graphics.window.get_object_at(graphics.ball.x, graphics.ball.y + graphics.ball.height)  # 左下角
             maybe_paddle2 = graphics.window.get_object_at(graphics.ball.x + graphics.ball.width,
-                                                          graphics.ball.y + graphics.ball.height)
+                                                          graphics.ball.y + graphics.ball.height)  # 右下角
 
-            # 球碰到磚塊1
+            # 球碰到磚塊1（左上角）
             if maybe_brick1 is not None and maybe_brick1 is not graphics.paddle and maybe_brick1 is not graphics.board:
                 graphics.window.remove(maybe_brick1)  # 移除磚塊
-                vy = -vy
-                total -= 1
+                vy = -vy  # 反彈
+                total -= 1  # 剩餘磚塊減一
                 score += brick_score(total)  # 加分
-                brick_destroyed += 1
+                brick_destroyed += 1  # 已消除磚塊數加一
                 # 檢查是否產生道具
                 powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)
                 if brick_destroyed % 10 == 0:
-                    chosen = choose_from_two_powerups(graphics.window)
+                    chosen = choose_from_two_powerups(graphics.window)  # 每10塊選擇一個道具
                     powerup_manager.apply_powerup(chosen)
                 graphics.board.text = f'Lives: {counter}  Score: {score}'
-            # 球碰到磚塊2
+            # 球碰到磚塊2（右上角）
             elif maybe_brick2 is not None and maybe_brick2 is not graphics.paddle and maybe_brick2 is not graphics.board:
-                graphics.window.remove(maybe_brick2)
-                vy = -vy
-                total -= 1
-                score += brick_score(total)
-                brick_destroyed += 1
-                powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)
+                graphics.window.remove(maybe_brick2)  # 移除磚塊
+                vy = -vy  # 反彈
+                total -= 1  # 剩餘磚塊減一
+                score += brick_score(total)  # 加分
+                brick_destroyed += 1  # 已消除磚塊數加一
+                powerup_manager.maybe_spawn(graphics.ball.x, graphics.ball.y)  # 檢查是否產生道具
                 if brick_destroyed % 10 == 0:
-                    chosen = choose_from_two_powerups(graphics.window)
+                    chosen = choose_from_two_powerups(graphics.window)  # 每10塊選擇一個道具
                     powerup_manager.apply_powerup(chosen)
                 graphics.board.text = f'Lives: {counter}  Score: {score}'
             # 球碰到板子反彈
             elif maybe_paddle1 is graphics.paddle or maybe_paddle2 is graphics.paddle:
-                vy = -vy
+                vy = -vy  # 球碰到板子時反彈
 
         # 遊戲結束，顯示結束訊息
         finish_board = graphics.finish
         if counter > 0 and total <= 0:
-            finish_board.text = 'Congratulations!!'
+            finish_board.text = 'Congratulations!!'  # 通關訊息
             graphics.window.add(finish_board, x=(graphics.window.width - finish_board.width) / 2,
                                 y=(graphics.window.height + finish_board.height) / 2)
             pause(2000)
         else:
             pause(200)
-            lost_animation(graphics.window)
+            lost_animation(graphics.window)  # 失敗動畫
 
         # 遊戲結束後詢問玩家下一步
         action = game_over_menu(graphics.window)

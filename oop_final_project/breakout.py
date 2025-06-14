@@ -7,10 +7,11 @@ lives to break all the bricks. As long as all the bricks are broken or all the l
 from campy.gui.events.timer import pause
 from breakoutgraphics import BreakoutGraphics
 from welcome_screen import WelcomeScreen  # 匯入歡迎畫面
-from end_animation import lost_animation, game_over_menu
+from end_animation import lost_animation
 from ball_powerups import PowerUpManager
 from powerup_selector import choose_from_two_powerups
 from paddle_manager import PaddleManager
+from menus import game_over_menu # 遊戲設定
 
 FRAME_RATE = 10         # 每幀間隔（數值越小速度越快）
 NUM_LIVES = 3           # 玩家生命數

@@ -11,7 +11,7 @@ from end_animation import lost_animation
 from ball_powerups import PowerUpManager
 from powerup_selector import choose_from_two_powerups
 from paddle_manager import PaddleManager
-from menus import game_over_menu # 遊戲設定
+from menus import game_over_menu # 遊戲設定f
 from ball_motion import ball_motion
 
 FRAME_RATE = 10         # 每幀間隔（數值越小速度越快）
@@ -86,48 +86,7 @@ def main():
             if graphics.bomb_mode_timer > 0:
                 graphics.bomb_mode_timer -= 1
                 # Add bomb effect logic here if needed
-
-            # 若球尚未發射，取得初始速度
-            if vx == vy == 0:
-                vx = graphics.get_dx()
-                vy = graphics.get_dy()
-            graphics.ball.move(vx, vy)  # 移動球
-
-            # 球碰到左右牆反彈
-            if graphics.ball.x >= graphics.window.width or graphics.ball.x <= 0:
-                vx = -vx
-            # 球碰到上方牆反彈
-            if graphics.ball.y <= 0:
-                vy = -vy
-            # 球掉到下方，重設球並扣一條命
-            if graphics.ball.y >= graphics.window.height:
-                graphics.reset_ball()
-                vx = 0
-                vy = 0
-                counter -= 1
-                graphics.board.text = f'Lives: {counter}  Score: {score}'
-            # --- 以下原本的球移動與反彈邏輯註解掉 ---
-            # # 若球尚未發射，取得初始速度
-            # if vx == vy == 0:
-            #     vx = graphics.get_dx()
-            #     vy = graphics.get_dy()
-            # graphics.ball.move(vx, vy)  # 移動球
-
-            # # 球碰到左右牆反彈
-            # if graphics.ball.x >= graphics.window.width or graphics.ball.x <= 0:
-            #     vx = -vx
-            # # 球碰到上方牆反彈
-            # if graphics.ball.y <= 0:
-            #     vy = -vy
-            # # 球掉到下方，重設球並扣一條命
-            # if graphics.ball.y >= graphics.window.height:
-            #     graphics.reset_ball()
-            #     vx = 0
-            #     vy = 0
-            #     counter -= 1
-            #     graphics.board.text = f'Lives: {counter}  Score: {score}'
-
-            # --- 新增：只要有球在場上就呼叫 ball_motion 控制所有球 ---
+        
             ball_motion(graphics)
 
 

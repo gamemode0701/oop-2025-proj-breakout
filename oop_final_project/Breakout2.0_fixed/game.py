@@ -1,4 +1,3 @@
-
 import random
 import sys
 from pygame.locals import *
@@ -32,6 +31,7 @@ class Game:
         self.bomb_active = False
         self.penetrate_timer = 0
         self.game_active = False
+        self.ball_trails = []  # 新增：儲存殘影
 
         # 直接呼叫reset_game進行完整初始化
         self.reset_game()
@@ -73,6 +73,7 @@ class Game:
         self.bomb_active = False
         self.penetrate_timer = 0
         self.game_active = False
+        self.ball_trails = []  # 重設殘影
         if hasattr(self, '_show_win_text'):
             del self._show_win_text
 
@@ -310,6 +311,19 @@ class Game:
         if self.penetrate_timer > 0:
             self.penetrate_timer -= 1
 
+        # --- 新增：penetrate 殘影 ---
+        if self.penetrate_timer > 0:
+            # 每幀記錄球的位置與透明度
+            self.ball_trails.append({
+                "pos": self.ball.rect.center,
+                "alpha": 180  # 初始透明度
+            })
+            # 限制殘影數量
+            if len(self.ball_trails) > 15:
+                self.ball_trails.pop(0)
+        else:
+            self.ball_trails.clear()
+
         # 勝利條件檢查
         if len(self.bricks) == 0:
             self.game_over(True)
@@ -329,10 +343,10 @@ class Game:
                 self.bricks.remove(brick)
                 self.score += self.calculate_brick_score(len(self.bricks))
 
-        # 視覺效果
+        # 視覺效果：在爆炸半徑內隨機產生大量紅橘色粒子
         particle_colors = [COLORS['red'], COLORS['orange']]
         particles = []
-        for _ in range(120):
+        for _ in range(120):  # 粒子數量可調整
             angle = random.uniform(0, 2 * 3.14159)
             radius = random.uniform(0, self.bomb_radius)
             px = int(center_x + radius * math.cos(angle))
@@ -341,10 +355,12 @@ class Game:
             size = random.randint(3, 7)
             particles.append((px, py, color, size))
 
-        for _ in range(15):
-            self.draw()
+        for _ in range(15):  # 粒子動畫幀數
+            self.update()  # 保持更新遊戲狀態減少卡頓
+            self.draw()  # 先畫遊戲畫面
             for px, py, color, size in particles:
-                pygame.draw.circle(self.screen, color, (px, py), size)
+                if random.random() < 0.7:  # 70% 機率顯示該粒子，產生閃爍效果
+                    pygame.draw.circle(self.screen, color, (px, py), size)
             pygame.display.flip()
             pygame.time.delay(20)
 
@@ -536,10 +552,22 @@ class Game:
         """繪製遊戲畫面"""
         self.screen.fill(COLORS['black'])
 
-        # 如果勝利且處於選單狀態，繪製YOU WIN!文字
-        if hasattr(self, '_show_win_text') and self._show_win_text:
-            text = self.big_font.render("YOU WIN!", True, COLORS['white'])
-            self.screen.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, 50)))
+        # --- 新增：繪製殘影 ---
+        if self.penetrate_timer > 0 and self.ball_trails:
+            for i, trail in enumerate(self.ball_trails):
+                surf = pygame.Surface((BALL_RADIUS * 2, BALL_RADIUS * 2), pygame.SRCALPHA)
+                # 透明度遞減
+                alpha = max(0, int(trail["alpha"] * (i + 1) / len(self.ball_trails)))
+                pygame.draw.circle(surf, (0, 255, 255, alpha), (BALL_RADIUS, BALL_RADIUS), BALL_RADIUS)
+                surf_rect = surf.get_rect(center=trail["pos"])
+                self.screen.blit(surf, surf_rect)
+
+        # 球本體顏色
+        if self.penetrate_timer > 0:
+            # 穿透時球為 cyan
+            pygame.draw.circle(self.screen, COLORS['cyan'], self.ball.rect.center, BALL_RADIUS)
+        else:
+            self.ball.draw(self.screen)
 
         # 繪製所有磚塊
         for brick in self.bricks:
@@ -567,6 +595,11 @@ class Game:
             prompt = self.font.render("Press SPACE or Click to Start", True, COLORS['white'])
             self.screen.blit(prompt, (SCREEN_WIDTH // 2 - prompt.get_width() // 2,
                                       SCREEN_HEIGHT - 50))
+
+        # 如果有額外球，顯示額外球提示
+        if len(self.extra_balls) > 0:
+            extra_balls_text = self.font.render(f"Extra Balls: {len(self.extra_balls)}", True, COLORS['white'])
+            self.screen.blit(extra_balls_text, (SCREEN_WIDTH - extra_balls_text.get_width() - 10, 10))
 
         # 顯示特殊技能狀態
         if self.bomb_timer > 0:
